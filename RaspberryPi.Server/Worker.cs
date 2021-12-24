@@ -5,62 +5,145 @@ namespace RaspberryPi.Server
 {
     public class Worker : BackgroundService
     {
-        private Timer _timer;
-        private object _lock = new object();
+        private readonly object _lock = new object();
         private readonly ILogger<Worker> _logger;
-        private GpioController _controller = new ();
+        private readonly GpioController _controller = new();
 
-    public Worker(ILogger<Worker> logger)
-        {
-            _logger = logger;
-        }
+        public Worker(ILogger<Worker> logger) => _logger = logger;
 
         protected override async Task ExecuteAsync(CancellationToken stoppingToken)
         {
             HubConnection connection;
 
             connection = new HubConnectionBuilder()
-                .WithUrl("http://localhost:53353/RelayBoardHub")
+                .WithUrl("https://toomari.ir/RelayBoardHub")
                 .WithAutomaticReconnect()
                 .AddMessagePackProtocol()
                 .Build();
 
-            connection.On<int, bool>("ReceiveSwitchCommand", (pin, high) =>
+            connection.Closed += (ex) =>
             {
-                lock (_lock)
+                _logger.LogInformation($"Connection Closed error : {ex.Message};;{ex.InnerException?.Message} at: {DateTimeOffset.Now}");
+                return Task.CompletedTask;
+            };
+
+            connection.Reconnecting += (ex) =>
+            {
+                _logger.LogInformation($"Reconnecting detail : {ex.Message};;{ex.InnerException?.Message} at: {DateTimeOffset.Now}");
+                return Task.CompletedTask;
+            };
+
+            connection.Reconnected += (ex) =>
+            {
+                _logger.LogInformation($"Reconnected detail : {ex} at: {DateTimeOffset.Now}");
+                return Task.CompletedTask;
+            };
+
+            connection.On<int, bool>("ReceiveSwitchCommand", async (pin, high) =>
+            {
+                try
                 {
-                    _controller.OpenPin(pin, PinMode.Output);
-                    _controller.Write(pin, high ? PinValue.High : PinValue.Low);
-                    _controller.ClosePin(pin);
+                    _logger.LogInformation("ReceiveSwitchCommand at: {time}", DateTimeOffset.Now);
+
+                    lock (_lock)
+                    {
+                        _controller.OpenPin(pin, PinMode.Output);
+                        _controller.Write(pin, high ? PinValue.High : PinValue.Low);
+                        _controller.ClosePin(pin);
+                    }
+
+                    await Task.Delay(1000);
+
+                    await connection.SendAsync("SendGetSwitchValuesCommand");
+
+                    _logger.LogInformation("ReceiveSwitchCommand Complete at: {time}", DateTimeOffset.Now);
                 }
+                catch (Exception ex)
+                {
+                    _logger.LogInformation($"ReceiveSwitchCommand error : {ex.Message};;{ex.InnerException?.Message} at: {DateTimeOffset.Now}");
+                }
+
             });
 
-            connection.On("ReceiveGetSwitchValuesCommand", () =>
+            connection.On("ReceiveGetSwitchValuesCommand", async () =>
             {
-                lock (_lock)
+                try
                 {
-                    var value37 = _controller.Read(37);
-                    var value38 = _controller.Read(38);
-                    var value40 = _controller.Read(40);
+                    _logger.LogInformation("ReceiveGetSwitchValuesCommand at: {time}", DateTimeOffset.Now);
 
-                    var dictionary = new Dictionary<int, bool>(3)
+                    var dictionary = new Dictionary<int, bool>(3);
+
+                    lock (_lock)
                     {
-                        { 37, value37 == PinValue.High ? true : false },
-                        { 38, value38 == PinValue.High ? true : false },
-                        { 40, value40 == PinValue.High ? true : false }
-                    };
+                        _controller.OpenPin(26, PinMode.Output);
+                        var value26 = _controller.Read(26);
+                        _controller.ClosePin(26);
 
-                    connection.SendAsync("SendSwitchValues", dictionary);
+                        _controller.OpenPin(20, PinMode.Output);
+                        var value20 = _controller.Read(20);
+                        _controller.ClosePin(20);
+
+                        _controller.OpenPin(21, PinMode.Output);
+                        var value21 = _controller.Read(21);
+                        _controller.ClosePin(21);
+
+                        dictionary.Add(26, value26 == PinValue.High ? true : false);
+                        dictionary.Add(20, value20 == PinValue.High ? true : false);
+                        dictionary.Add(21, value21 == PinValue.High ? true : false);
+                    }
+
+                    await connection.SendAsync("SendSwitchValues", dictionary);
+
+                    _logger.LogInformation("ReceiveGetSwitchValuesCommand Complete at: {time}", DateTimeOffset.Now);
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogInformation($"ReceiveGetSwitchValuesCommand error : {ex.Message};;{ex.InnerException?.Message} at: {DateTimeOffset.Now}");
                 }
             });
 
             await connection.StartAsync();
 
+            _logger.LogInformation("Worker running at: {time}", DateTimeOffset.Now);
+
+            try
+            {
+                var dictionary = new Dictionary<int, bool>(3);
+
+                lock (_lock)
+                {
+                    _controller.OpenPin(26, PinMode.Output);
+                    var value26 = _controller.Read(26);
+                    _controller.ClosePin(26);
+
+                    _controller.OpenPin(20, PinMode.Output);
+                    var value20 = _controller.Read(20);
+                    _controller.ClosePin(20);
+
+                    _controller.OpenPin(21, PinMode.Output);
+                    var value21 = _controller.Read(21);
+                    _controller.ClosePin(21);
+
+                    dictionary.Add(26, value26 == PinValue.High ? true : false);
+                    dictionary.Add(20, value20 == PinValue.High ? true : false);
+                    dictionary.Add(21, value21 == PinValue.High ? true : false);
+                }
+
+                await connection.SendAsync("SendSwitchValues", dictionary);
+
+                _logger.LogInformation("SendSwitchValues at: {time}", DateTimeOffset.Now);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogInformation($"SendSwitchValues error : {ex.Message};;{ex.InnerException?.Message} at: {DateTimeOffset.Now}");
+            }
+
             while (!stoppingToken.IsCancellationRequested)
             {
-                _logger.LogInformation("Worker running at: {time}", DateTimeOffset.Now);
                 await Task.Delay(1000, stoppingToken);
             }
+
+            _logger.LogInformation("Worker stopping at: {time}", DateTimeOffset.Now);
 
             _controller.Dispose();
 

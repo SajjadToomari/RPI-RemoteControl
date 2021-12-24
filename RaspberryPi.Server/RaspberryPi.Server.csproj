@@ -2,7 +2,6 @@
 
 	<PropertyGroup>
 		<TargetFramework>net6.0</TargetFramework>
-		<Nullable>enable</Nullable>
 		<ImplicitUsings>enable</ImplicitUsings>
 		<UserSecretsId>dotnet-RaspberryPi.Server-60D4E182-551C-4C40-86C1-7E0BC9C9C708</UserSecretsId>
 		<SatelliteResourceLanguages>en</SatelliteResourceLanguages>

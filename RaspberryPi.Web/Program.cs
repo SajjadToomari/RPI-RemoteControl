@@ -25,7 +25,7 @@ builder.Host.ConfigureAppConfiguration((hostingContext, config) =>
  });
 
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
-    options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection"))
+    options.UseSqlite(builder.Configuration.GetConnectionString("DefaultConnection"))
 );
 
 builder.Services.AddSignalR()
@@ -46,8 +46,6 @@ var app = builder.Build();
 }
 
 app.MapHub<RelayBoardHub>("/RelayBoardHub");
-
-app.UseHttpsRedirection();
 
 var summaries = new[]
 {
@@ -105,7 +103,18 @@ app.MapPost("/api/account/signup", async (LoginViewModel model, [FromServices] A
 
 app.Run();
 
-internal record WeatherForecast(DateTime Date, int TemperatureC, string? Summary)
+Task.Run(async () =>
+{
+    try
+    {
+        await DataBaseSeed.Initialize(app.Services);
+    }
+    catch (Exception)
+    {
+    }
+});
+
+internal record WeatherForecast(DateTime Date, int TemperatureC, string Summary)
 {
     public int TemperatureF => 32 + (int)(TemperatureC / 0.5556);
 }
