@@ -1,0 +1,85 @@
+﻿@{
+    ViewData["Title"] = "Home Page";
+}
+
+<div class="container">
+    <div class="row">
+        <div id="alert" dir="rtl" style="display: none;" class="alert alert-warning" role="alert"></div>
+        <div class="col-md-4 offset-md-4">
+            <div class="card" style="width: 18rem;">
+                <img src="/img/off_lamp.png" id="imgLamp" class="card-img-top">
+                <div class="card-body" dir="rtl">
+                    <h5 class="card-title">@*Card title*@</h5>
+                    <p class="card-text" id="txtStatus">وضعیت : خاموش</p>
+                    <button class="btn btn-primary" id="btnSwitch">روشن کردن</button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+<script>
+
+    var isOff = true;
+
+    const connection = new signalR.HubConnectionBuilder()
+        .withUrl("/RelayBoardHub")
+        .withAutomaticReconnect()
+        .withHubProtocol(new signalR.protocols.msgpack.MessagePackHubProtocol())
+        .build();
+
+    connection.on("ReceiveSwitchValues", (data) => {
+        if (data[26] == false) {
+            isOff = false;
+            $("#txtStatus").text("وضعیت : روشن");
+            $("#btnSwitch").text("خاموش کردن");
+            document.getElementById("imgLamp").src = "/img/on_lamp.png";
+        }
+        else {
+            isOff = true;
+            $("#txtStatus").text("وضعیت : خاموش");
+            $("#btnSwitch").text("روشن کردن");
+            document.getElementById("imgLamp").src = "/img/off_lamp.png";
+        }
+
+    });
+
+    document.getElementById("btnSwitch").onclick = (event => {
+        if (isOff) {
+            connection.invoke("SendSwitchCommand", 26, false);
+        }
+        else {
+            connection.invoke("SendSwitchCommand", 26, true);
+        }
+    });
+
+    connection.onclose(() => {
+        document.getElementById("alert").innerHTML = "در حال اتصال";
+        document.getElementById("alert").style = "display: unset;";
+        document.getElementById("alert").className = "alert alert-warning";
+        start();
+    });
+
+    function start() {
+        try {
+            connection.start().then(() => {
+                document.getElementById("alert").innerHTML = "متصل شد";
+                document.getElementById("alert").style = "display: unset;";
+                document.getElementById("alert").className = "alert alert-success";
+                connection.invoke("SendGetSwitchValuesCommand");
+            });
+
+        } catch (err) {
+            console.log(err);
+            document.getElementById("alert").innerHTML = "در حال اتصال";
+            document.getElementById("alert").style = "display: unset;";
+            document.getElementById("alert").className = "alert alert-warning";
+            setTimeout(start, 5000);
+        }
+    }
+
+    start();
+
+</script>
+}

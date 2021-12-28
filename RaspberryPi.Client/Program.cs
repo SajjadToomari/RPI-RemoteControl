@@ -4,7 +4,7 @@ using Microsoft.Extensions.DependencyInjection;
 HubConnection connection;
 
 connection = new HubConnectionBuilder()
-              .WithUrl("https://toomari.ir/RelayBoardHub")
+              .WithUrl("https://localhost:7247/RelayBoardHub")
               .WithAutomaticReconnect()
               .AddMessagePackProtocol()
               .Build();
@@ -20,7 +20,13 @@ connection.On<int, bool>("ReceiveSwitchCommand", (pin, high) =>
 
 connection.StartAsync();
 
-connection.SendAsync("SendSwitchCommand", 26, true);
+var dictionary = new Dictionary<int, bool>(3);
+
+dictionary.Add(26, false);
+dictionary.Add(20, false);
+dictionary.Add(21, true);
+
+await connection.SendAsync("SendSwitchValues", dictionary);
 
 
 Console.ReadLine();
