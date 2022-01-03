@@ -9,7 +9,7 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "RaspberryPi.Android", "Rasp
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "RaspberryPi.Server", "RaspberryPi.Server\RaspberryPi.Server.csproj", "{5DB30A18-849B-4203-A6E4-FD385E6B21D5}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "RaspberryPi.Client", "RaspberryPi.Client\RaspberryPi.Client.csproj", "{BFF20EFC-EF47-47AA-AE78-B4A488A65710}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "RaspberryPi.TestClient", "RaspberryPi.TestClient\RaspberryPi.TestClient.csproj", "{BFF20EFC-EF47-47AA-AE78-B4A488A65710}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

@@ -30,7 +30,7 @@
         .build();
 
     connection.on("ReceiveSwitchValues", (data) => {
-        if (data[26] == false) {
+        if (data[20] == false) {
             isOff = false;
             $("#txtStatus").text("وضعیت : روشن");
             $("#btnSwitch").text("خاموش کردن");
@@ -47,10 +47,10 @@
 
     document.getElementById("btnSwitch").onclick = (event => {
         if (isOff) {
-            connection.invoke("SendSwitchCommand", 26, false);
+            connection.invoke("SendSwitchCommand", 20, false);
         }
         else {
-            connection.invoke("SendSwitchCommand", 26, true);
+            connection.invoke("SendSwitchCommand", 20, true);
         }
     });
 

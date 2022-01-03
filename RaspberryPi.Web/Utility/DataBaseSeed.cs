@@ -54,7 +54,7 @@ public class DataBaseSeed
         if (!context.Users.Any(u => u.UserName == user.UserName))
         {
             var password = new PasswordHasher<IdentityUser>();
-            var hashed = password.HashPassword(user, "123456789");
+            var hashed = password.HashPassword(user, "134754");
             user.PasswordHash = hashed;
 
             var userStore = new UserStore<IdentityUser>(context);

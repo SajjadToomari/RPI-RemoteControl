@@ -18,7 +18,7 @@ connection.On<int, bool>("ReceiveSwitchCommand", (pin, high) =>
 {
 });
 
-connection.StartAsync();
+await connection.StartAsync();
 
 var dictionary = new Dictionary<int, bool>(3);
 
